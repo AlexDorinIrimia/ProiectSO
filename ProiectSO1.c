@@ -5,7 +5,7 @@
 # include <unistd.h>
 # include <stdlib.h>
 # include <string.h>
-# include <time.h> 
+# include <errno.h>
 
 char* userID;
 char* dimensiune;
@@ -13,7 +13,7 @@ char* links;
 
 void permisiuniUser(struct stat stat)
 {
-    int descriptor = open("Info.txt",O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    int descriptor = open("Statistica.txt",O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if(stat.st_mode & S_IRUSR)
         write(descriptor,"R",1);
     else
@@ -31,7 +31,7 @@ void permisiuniUser(struct stat stat)
 
 void permisiuniGrup(struct stat stat)
 {
-    int descriptor = open("Info.txt",O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    int descriptor = open("Statistica.txt",O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
    if(stat.st_mode & S_IRGRP)
         write(descriptor,"R",1);
     else
@@ -49,7 +49,7 @@ void permisiuniGrup(struct stat stat)
 
 void permisiuniAltii(struct stat stat)
 {
-    int descriptor = open("Info.txt",O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    int descriptor = open("Statistica.txt",O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if(stat.st_mode & S_IROTH)
         write(descriptor,"R",1);
     else
@@ -79,7 +79,8 @@ int main(int argc, char**argv)
         userID = malloc(sizeof(unsigned));
         dimensiune = malloc(sizeof(unsigned));
         links = malloc(sizeof(int));
-        int descriptor = open("Info.txt", O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        int descriptor = open("Statistica.txt", O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        printf("%d", descriptor);
         write(descriptor, "Nume fisier: ", 13);
         write(descriptor,argv[1],strlen(argv[1]) * sizeof(char));
         write(descriptor,"\n",1);
