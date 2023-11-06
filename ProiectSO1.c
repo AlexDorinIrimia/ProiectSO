@@ -6,10 +6,12 @@
 # include <stdlib.h>
 # include <string.h>
 # include <errno.h>
+# include <time.h>
 
 char* userID;
 char* dimensiune;
 char* links;
+char* modificare;
 
 void permisiuniUser(struct stat stat)
 {
@@ -65,6 +67,22 @@ void permisiuniAltii(struct stat stat)
     write(descriptor,"\n",1);
 }
 
+char *ultimaModificare(time_t s)
+{
+    char *rezultat = malloc(20 * sizeof(char));
+    char *aux = malloc(20 * sizeof(char));
+    char *aux2 = malloc(20 * sizeof(char));
+    struct tm timp;
+    memset(&timp,0,sizeof(struct tm));
+    sprintf(aux,"%ld",s);
+    strptime(aux,"%s",&timp);
+    strftime(aux2,sizeof(aux2),"%d.",&timp);
+    strcat(rezultat,aux2);
+    strftime(aux2,sizeof(rezultat),"%m.%Y",&timp);
+    strcat(rezultat,aux2);
+    return rezultat;
+}
+
 int main(int argc, char**argv)
 {   
     struct stat s;
@@ -79,8 +97,9 @@ int main(int argc, char**argv)
         userID = malloc(sizeof(unsigned));
         dimensiune = malloc(sizeof(unsigned));
         links = malloc(sizeof(int));
+        modificare = malloc(50 * sizeof(char));
         int descriptor = open("Statistica.txt", O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-        printf("%d", descriptor);
+        int descriptor2 = open(argv[1],O_RDONLY);
         write(descriptor, "Nume fisier: ", 13);
         write(descriptor,argv[1],strlen(argv[1]) * sizeof(char));
         write(descriptor,"\n",1);
@@ -97,6 +116,9 @@ int main(int argc, char**argv)
         write(descriptor, userID, strlen(userID) * sizeof(char));
         write(descriptor,"\n",1);
         write(descriptor, "Timpul ultimei modificari: ", 27);
+        time_t timp = s.st_mtime; 
+        modificare = ultimaModificare(timp);
+        write(descriptor, modificare, strlen(modificare) * sizeof(char));
         write(descriptor,"\n",1);
         write(descriptor, "Numar de legaturi: ", 19);
         sprintf(links,"%ld",s.st_nlink);
@@ -108,7 +130,9 @@ int main(int argc, char**argv)
         permisiuniGrup(s);
         write(descriptor, "Drepturi de acces altii: ", 25);
         permisiuniAltii(s);
+        close(descriptor2);
         close(descriptor);
+
     }
     return 0;
 }
