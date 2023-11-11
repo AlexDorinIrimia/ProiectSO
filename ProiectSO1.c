@@ -7,11 +7,14 @@
 # include <string.h>
 # include <errno.h>
 # include <time.h>
+# include <dirent.h>
 
 char* userID;
 char* dimensiune;
 char* links;
 char* modificare;
+int* inaltime;
+int* latime;
 
 void permisiuniUser(struct stat stat)
 {
@@ -83,29 +86,50 @@ char *ultimaModificare(time_t s)
     return rezultat;
 }
 
-int main(int argc, char**argv)
+void bmpFileStat(char *file)
 {   
     struct stat s;
-    if(argc != 2)
-    {
-        printf("Usage ./program %s\n", argv[1]);
-        exit(-1);
-    }
-    stat(argv[1],&s);
+    stat(file,&s);
     if(S_ISREG(s.st_mode))
     {   
         userID = malloc(sizeof(unsigned));
         dimensiune = malloc(sizeof(unsigned));
         links = malloc(sizeof(int));
         modificare = malloc(50 * sizeof(char));
+        inaltime = malloc(sizeof(int));
+        latime = malloc(sizeof(int));
         int descriptor = open("Statistica.txt", O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-        int descriptor2 = open(argv[1],O_RDONLY);
+        if(descriptor == -1)
+        {
+            perror("Eroare");
+            exit(-1);
+        }
+        int descriptor2 = open(file,O_RDONLY);
+        if(descriptor2 == -1)
+        {
+            perror("Eroare");
+            exit(-1);
+        }
         write(descriptor, "Nume fisier: ", 13);
-        write(descriptor,argv[1],strlen(argv[1]) * sizeof(char));
+        write(descriptor,file,strlen(file) * sizeof(char));
         write(descriptor,"\n",1);
         write(descriptor, "Inaltime: ", 10);
+        if((lseek(descriptor2,18,SEEK_SET) == -1))
+        {
+            perror("Eroare");
+        }
+        if((read(descriptor2,inaltime,4) == -1))
+        {
+            perror("Eroare");
+        }
+        write(descriptor,inaltime,sizeof(int));
         write(descriptor,"\n",1);
         write(descriptor, "Lungime: ", 9);
+        if((read(descriptor2,latime,4) == -1))
+        {
+            perror("Eroare");
+        }
+        write(descriptor,latime,sizeof(int));
         write(descriptor,"\n",1);
         write(descriptor, "Dimensiune: ", 12);
         sprintf(dimensiune,"%ld", s.st_size);
@@ -134,5 +158,123 @@ int main(int argc, char**argv)
         close(descriptor);
 
     }
+}
+
+void fileStat(char *file)
+{   
+    struct stat s;
+    stat(file,&s);
+    if(S_ISREG(s.st_mode))
+    {   
+        userID = malloc(sizeof(unsigned));
+        dimensiune = malloc(sizeof(unsigned));
+        links = malloc(sizeof(int));
+        modificare = malloc(50 * sizeof(char));
+        int descriptor = open("Statistica.txt", O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        if(descriptor == -1)
+        {
+            perror("Eroare");
+            exit(-1);
+        }
+        write(descriptor, "Nume fisier: ", 13);
+        write(descriptor,file,strlen(file) * sizeof(char));
+        write(descriptor,"\n",1);
+        write(descriptor, "Dimensiune: ", 12);
+        sprintf(dimensiune,"%ld", s.st_size);
+        write(descriptor, dimensiune, strlen(dimensiune) * sizeof(char));
+        write(descriptor,"\n",1);
+        write(descriptor, "Identificatorul utilizatorului: ", 32);
+        sprintf(userID,"%d", s.st_uid);
+        write(descriptor, userID, strlen(userID) * sizeof(char));
+        write(descriptor,"\n",1);
+        write(descriptor, "Timpul ultimei modificari: ", 27);
+        time_t timp = s.st_mtime; 
+        modificare = ultimaModificare(timp);
+        write(descriptor, modificare, strlen(modificare) * sizeof(char));
+        write(descriptor,"\n",1);
+        write(descriptor, "Numar de legaturi: ", 19);
+        sprintf(links,"%ld",s.st_nlink);
+        write(descriptor,links,strlen(links) * sizeof(char));
+        write(descriptor,"\n",1);
+        write(descriptor, "Drepturi de acces user: ", 24);
+        permisiuniUser(s);
+        write(descriptor, "Drepturi de acces grup: ", 24);
+        permisiuniGrup(s);
+        write(descriptor, "Drepturi de acces altii: ", 25);
+        permisiuniAltii(s);
+        close(descriptor);
+
+    }
+}
+
+
+void dirStat(char *dir)
+{
+    userID = malloc(sizeof(unsigned));
+    struct stat dirstat;
+    stat(dir,&dirstat);
+    int descriptor = open("Statistica.txt", O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    if(descriptor == -1)
+    {
+        perror("Eroare");
+        exit(-1);
+    }
+    write(descriptor,"Nume director: ", 14);
+    write(descriptor,dir,strlen(dir) * sizeof(char));
+    write(descriptor,"\n",1);
+    write(descriptor, "Identificatorul utilizatorului: ", 32);
+    sprintf(userID,"%d", dirstat.st_uid);
+    write(descriptor, userID, strlen(userID) * sizeof(char));
+    write(descriptor,"\n",1);
+    write(descriptor, "Drepturi de acces user: ", 24);
+    permisiuniUser(dirstat);
+    write(descriptor, "Drepturi de acces grup: ", 24);
+    permisiuniGrup(dirstat);
+    write(descriptor, "Drepturi de acces altii: ", 25);
+    permisiuniAltii(dirstat);
+    close(descriptor);
+}
+
+void symbloicLinkStat(char *file)
+{
+    char*dimensiune = malloc(sizeof(unsigned));
+    struct stat s;
+    struct stat st;
+    stat(file,&st);
+    lstat(file,&s);
+    int descriptor = open("Statistica.txt", O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    if(descriptor == -1)
+    {
+        perror("Eroare");
+        exit(-1);
+    }
+    write(descriptor,"Nume: ",6);
+    write(descriptor,file,strlen(file) * sizeof(char));
+    write(descriptor,"\n",1);
+    write(descriptor, "Dimensiune: ", 12);
+    sprintf(dimensiune,"%ld", s.st_size);
+    write(descriptor, dimensiune, strlen(dimensiune) * sizeof(char));
+    write(descriptor,"\n",1);
+    write(descriptor,"Dimensiune target: ",19);
+    sprintf(dimensiune,"%ld", st.st_size);
+    write(descriptor, dimensiune, strlen(dimensiune) * sizeof(char));
+    write(descriptor,"\n",1);
+    write(descriptor, "Drepturi de acces user: ", 24);
+    permisiuniUser(s);
+    write(descriptor, "Drepturi de acces grup: ", 24);
+    permisiuniGrup(s);
+    write(descriptor, "Drepturi de acces altii: ", 25);
+    permisiuniAltii(s);
+    close(descriptor);
+}
+
+int main(int argc, char**argv)
+{   
+    if(argc != 2)
+    {
+        printf("Usage ./program %s\n", argv[1]);
+        exit(-1);
+    }
+   
     return 0;
 }
