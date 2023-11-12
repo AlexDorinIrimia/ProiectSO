@@ -15,6 +15,7 @@ char* links;
 char* modificare;
 int* inaltime;
 int* latime;
+char *newpath;
 
 void permisiuniUser(struct stat stat)
 {
@@ -30,14 +31,14 @@ void permisiuniUser(struct stat stat)
     if(stat.st_mode & S_IXUSR)
         write(descriptor,"X",1);
     else
-       write(descriptor,"-",1);
+        write(descriptor,"-",1);
     write(descriptor,"\n",1);
 }
 
 void permisiuniGrup(struct stat stat)
 {
     int descriptor = open("Statistica.txt",O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-   if(stat.st_mode & S_IRGRP)
+    if(stat.st_mode & S_IRGRP)
         write(descriptor,"R",1);
     else
         write(descriptor,"-",1);
@@ -48,7 +49,7 @@ void permisiuniGrup(struct stat stat)
     if(stat.st_mode & S_IXGRP)
         write(descriptor,"X",1);
     else
-       write(descriptor,"-",1);
+        write(descriptor,"-",1);
     write(descriptor,"\n",1);
 }
 
@@ -66,15 +67,15 @@ void permisiuniAltii(struct stat stat)
     if(stat.st_mode & S_IXOTH)
         write(descriptor,"X",1);
     else
-       write(descriptor,"-",1);
+        write(descriptor,"-",1);
     write(descriptor,"\n",1);
 }
 
 char *ultimaModificare(time_t s)
 {
-    char *rezultat = malloc(20 * sizeof(char));
-    char *aux = malloc(20 * sizeof(char));
-    char *aux2 = malloc(20 * sizeof(char));
+    char *rezultat = malloc(9 * sizeof(char));
+    char *aux = malloc(9 * sizeof(char));
+    char *aux2 = malloc(9 * sizeof(char));
     struct tm timp;
     memset(&timp,0,sizeof(struct tm));
     sprintf(aux,"%ld",s);
@@ -87,11 +88,11 @@ char *ultimaModificare(time_t s)
 }
 
 void bmpFileStat(char *file)
-{   
+{
     struct stat s;
     stat(file,&s);
     if(S_ISREG(s.st_mode))
-    {   
+    {
         userID = malloc(sizeof(unsigned));
         dimensiune = malloc(sizeof(unsigned));
         links = malloc(sizeof(int));
@@ -140,7 +141,7 @@ void bmpFileStat(char *file)
         write(descriptor, userID, strlen(userID) * sizeof(char));
         write(descriptor,"\n",1);
         write(descriptor, "Timpul ultimei modificari: ", 27);
-        time_t timp = s.st_mtime; 
+        time_t timp = s.st_mtime;
         modificare = ultimaModificare(timp);
         write(descriptor, modificare, strlen(modificare) * sizeof(char));
         write(descriptor,"\n",1);
@@ -154,6 +155,7 @@ void bmpFileStat(char *file)
         permisiuniGrup(s);
         write(descriptor, "Drepturi de acces altii: ", 25);
         permisiuniAltii(s);
+        write(descriptor,"\n",1);
         close(descriptor2);
         close(descriptor);
 
@@ -161,11 +163,11 @@ void bmpFileStat(char *file)
 }
 
 void fileStat(char *file)
-{   
+{
     struct stat s;
     stat(file,&s);
     if(S_ISREG(s.st_mode))
-    {   
+    {
         userID = malloc(sizeof(unsigned));
         dimensiune = malloc(sizeof(unsigned));
         links = malloc(sizeof(int));
@@ -188,7 +190,7 @@ void fileStat(char *file)
         write(descriptor, userID, strlen(userID) * sizeof(char));
         write(descriptor,"\n",1);
         write(descriptor, "Timpul ultimei modificari: ", 27);
-        time_t timp = s.st_mtime; 
+        time_t timp = s.st_mtime;
         modificare = ultimaModificare(timp);
         write(descriptor, modificare, strlen(modificare) * sizeof(char));
         write(descriptor,"\n",1);
@@ -202,6 +204,7 @@ void fileStat(char *file)
         permisiuniGrup(s);
         write(descriptor, "Drepturi de acces altii: ", 25);
         permisiuniAltii(s);
+        write(descriptor,"\n",1);
         close(descriptor);
 
     }
@@ -232,6 +235,7 @@ void dirStat(char *dir)
     permisiuniGrup(dirstat);
     write(descriptor, "Drepturi de acces altii: ", 25);
     permisiuniAltii(dirstat);
+    write(descriptor,"\n",1);
     close(descriptor);
 }
 
@@ -265,16 +269,75 @@ void symbloicLinkStat(char *file)
     permisiuniGrup(s);
     write(descriptor, "Drepturi de acces altii: ", 25);
     permisiuniAltii(s);
+    write(descriptor,"\n",1);
     close(descriptor);
 }
 
+int bmpORother(char *file)
+{
+    char *ext = strstr(file,".bmp");
+    if(ext)
+        return 1;
+    else
+        return 0;
+}
+
+int parse(char *dir)
+{
+    if((newpath = malloc(150 * sizeof(char))) == NULL)
+    {
+        perror("Eroare!");
+        return -1;
+    }
+    DIR *director;
+    struct dirent *direct;
+    struct stat st;
+    if((director = opendir(dir)) == NULL)
+    {
+        perror("Eroare!");
+        return -1;
+    }
+    while((direct = readdir(director)) != NULL)
+    {   
+        if((strcmp(direct->d_name,".") == 0) || (strcmp(direct->d_name,"..") == 0))
+        {
+            continue;
+        }
+        else
+        {
+            sprintf(newpath,"%s/%s", dir,direct->d_name);
+            stat(newpath,&st);
+            if((st.st_mode & __S_IFMT) == __S_IFREG)
+            {
+                if((bmpORother(newpath)))
+                    bmpFileStat(newpath);
+                else
+                    fileStat(newpath);
+            }
+            else if((st.st_mode & __S_IFMT) == __S_IFLNK)
+            {
+                symbloicLinkStat(newpath);
+            }
+            else if((st.st_mode & __S_IFMT) == __S_IFDIR)
+            {
+                dirStat(newpath);
+                parse(newpath);
+            }
+    
+        }
+    }
+    closedir(director);
+    return 0;
+}
+
 int main(int argc, char**argv)
-{   
+{
     if(argc != 2)
     {
         printf("Usage ./program %s\n", argv[1]);
         exit(-1);
     }
-   
+
+    parse(argv[1]);
     return 0;
 }
