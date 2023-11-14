@@ -8,6 +8,7 @@
 # include <errno.h>
 # include <time.h>
 # include <dirent.h>
+# include <libgen.h>
 
 char* userID;
 char* dimensiune;
@@ -16,10 +17,11 @@ char* modificare;
 int* inaltime;
 int* latime;
 char *newpath;
+char *path;
+char *name;
 
-void permisiuniUser(struct stat stat)
+void permisiuniUser(struct stat stat, int descriptor)
 {
-    int descriptor = open("Statistica.txt",O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if(stat.st_mode & S_IRUSR)
         write(descriptor,"R",1);
     else
@@ -35,9 +37,8 @@ void permisiuniUser(struct stat stat)
     write(descriptor,"\n",1);
 }
 
-void permisiuniGrup(struct stat stat)
+void permisiuniGrup(struct stat stat,int descriptor)
 {
-    int descriptor = open("Statistica.txt",O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if(stat.st_mode & S_IRGRP)
         write(descriptor,"R",1);
     else
@@ -53,9 +54,8 @@ void permisiuniGrup(struct stat stat)
     write(descriptor,"\n",1);
 }
 
-void permisiuniAltii(struct stat stat)
+void permisiuniAltii(struct stat stat, int descriptor)
 {
-    int descriptor = open("Statistica.txt",O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if(stat.st_mode & S_IROTH)
         write(descriptor,"R",1);
     else
@@ -87,8 +87,10 @@ char *ultimaModificare(time_t s)
     return rezultat;
 }
 
-void bmpFileStat(char *file)
+void bmpFileStat(char *file,char *dir)
 {
+    path = malloc(100 * sizeof(char));
+    name = malloc(100 * sizeof(char));
     struct stat s;
     stat(file,&s);
     if(S_ISREG(s.st_mode))
@@ -99,7 +101,9 @@ void bmpFileStat(char *file)
         modificare = malloc(50 * sizeof(char));
         inaltime = malloc(sizeof(int));
         latime = malloc(sizeof(int));
-        int descriptor = open("Statistica.txt", O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        name = basename(file);
+        sprintf(path,"%s/%s_statistica.txt",dir,name);
+        int descriptor = open(path, O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
         if(descriptor == -1)
         {
             perror("Eroare");
@@ -150,11 +154,11 @@ void bmpFileStat(char *file)
         write(descriptor,links,strlen(links) * sizeof(char));
         write(descriptor,"\n",1);
         write(descriptor, "Drepturi de acces user: ", 24);
-        permisiuniUser(s);
+        permisiuniUser(s,descriptor);
         write(descriptor, "Drepturi de acces grup: ", 24);
-        permisiuniGrup(s);
+        permisiuniGrup(s,descriptor);
         write(descriptor, "Drepturi de acces altii: ", 25);
-        permisiuniAltii(s);
+        permisiuniAltii(s,descriptor);
         write(descriptor,"\n",1);
         close(descriptor2);
         close(descriptor);
@@ -162,8 +166,10 @@ void bmpFileStat(char *file)
     }
 }
 
-void fileStat(char *file)
+void fileStat(char *file,char *dir)
 {
+    path = malloc(100 * sizeof(char));
+    name = malloc(100 * sizeof(char));
     struct stat s;
     stat(file,&s);
     if(S_ISREG(s.st_mode))
@@ -172,7 +178,9 @@ void fileStat(char *file)
         dimensiune = malloc(sizeof(unsigned));
         links = malloc(sizeof(int));
         modificare = malloc(50 * sizeof(char));
-        int descriptor = open("Statistica.txt", O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        name = basename(file);
+        sprintf(path,"%s/%s_statistica.txt",dir,name);
+        int descriptor = open(path, O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
         if(descriptor == -1)
         {
             perror("Eroare");
@@ -199,11 +207,11 @@ void fileStat(char *file)
         write(descriptor,links,strlen(links) * sizeof(char));
         write(descriptor,"\n",1);
         write(descriptor, "Drepturi de acces user: ", 24);
-        permisiuniUser(s);
+        permisiuniUser(s, descriptor);
         write(descriptor, "Drepturi de acces grup: ", 24);
-        permisiuniGrup(s);
+        permisiuniGrup(s, descriptor);
         write(descriptor, "Drepturi de acces altii: ", 25);
-        permisiuniAltii(s);
+        permisiuniAltii(s, descriptor);
         write(descriptor,"\n",1);
         close(descriptor);
 
@@ -211,12 +219,16 @@ void fileStat(char *file)
 }
 
 
-void dirStat(char *dir)
+void dirStat(char *dir,char *dir2)
 {
+    path = malloc(100 * sizeof(char));
+    name = malloc(100 * sizeof(char));
     userID = malloc(sizeof(unsigned));
     struct stat dirstat;
     stat(dir,&dirstat);
-    int descriptor = open("Statistica.txt", O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    name = basename(dir);
+    sprintf(path,"%s/%s_statistica.txt",dir2,name);
+    int descriptor = open(path, O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if(descriptor == -1)
     {
         perror("Eroare");
@@ -230,23 +242,27 @@ void dirStat(char *dir)
     write(descriptor, userID, strlen(userID) * sizeof(char));
     write(descriptor,"\n",1);
     write(descriptor, "Drepturi de acces user: ", 24);
-    permisiuniUser(dirstat);
+    permisiuniUser(dirstat,descriptor);
     write(descriptor, "Drepturi de acces grup: ", 24);
-    permisiuniGrup(dirstat);
+    permisiuniGrup(dirstat,descriptor);
     write(descriptor, "Drepturi de acces altii: ", 25);
-    permisiuniAltii(dirstat);
+    permisiuniAltii(dirstat,descriptor);
     write(descriptor,"\n",1);
     close(descriptor);
 }
 
-void symbloicLinkStat(char *file)
+void symbloicLinkStat(char *file,char *dir)
 {
-    char*dimensiune = malloc(sizeof(unsigned));
+    path = malloc(100 * sizeof(char));
+    name = malloc(100 * sizeof(char));
+    dimensiune = malloc(sizeof(unsigned));
     struct stat s;
     struct stat st;
     stat(file,&st);
     lstat(file,&s);
-    int descriptor = open("Statistica.txt", O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    name = basename(file);
+    sprintf(path,"%s/%s_statistica.txt",dir,name);
+    int descriptor = open(path, O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if(descriptor == -1)
     {
         perror("Eroare");
@@ -264,11 +280,11 @@ void symbloicLinkStat(char *file)
     write(descriptor, dimensiune, strlen(dimensiune) * sizeof(char));
     write(descriptor,"\n",1);
     write(descriptor, "Drepturi de acces user: ", 24);
-    permisiuniUser(s);
+    permisiuniUser(s,descriptor);
     write(descriptor, "Drepturi de acces grup: ", 24);
-    permisiuniGrup(s);
+    permisiuniGrup(s,descriptor);
     write(descriptor, "Drepturi de acces altii: ", 25);
-    permisiuniAltii(s);
+    permisiuniAltii(s,descriptor);
     write(descriptor,"\n",1);
     close(descriptor);
 }
@@ -282,7 +298,7 @@ int bmpORother(char *file)
         return 0;
 }
 
-int parse(char *dir)
+int parse(char *Dir,char *dir)
 {
     if((newpath = malloc(150 * sizeof(char))) == NULL)
     {
@@ -292,7 +308,7 @@ int parse(char *dir)
     DIR *director;
     struct dirent *direct;
     struct stat st;
-    if((director = opendir(dir)) == NULL)
+    if((director = opendir(Dir)) == NULL)
     {
         perror("Eroare!");
         return -1;
@@ -305,23 +321,23 @@ int parse(char *dir)
         }
         else
         {
-            sprintf(newpath,"%s/%s", dir,direct->d_name);
+            sprintf(newpath,"%s/%s", Dir,direct->d_name);
             stat(newpath,&st);
-            if((st.st_mode & __S_IFMT) == __S_IFREG)
+            if(S_ISREG(st.st_mode))
             {
                 if((bmpORother(newpath)))
-                    bmpFileStat(newpath);
+                    bmpFileStat(newpath,dir);
                 else
-                    fileStat(newpath);
+                    fileStat(newpath,dir);
             }
-            else if((st.st_mode & __S_IFMT) == __S_IFLNK)
+            else if(S_ISLNK(st.st_mode))
             {
-                symbloicLinkStat(newpath);
+                symbloicLinkStat(newpath,dir);
             }
-            else if((st.st_mode & __S_IFMT) == __S_IFDIR)
+            else if(S_ISDIR(st.st_mode))
             {
-                dirStat(newpath);
-                parse(newpath);
+                dirStat(newpath,dir);
+                parse(newpath,dir);
             }
     
         }
@@ -332,12 +348,12 @@ int parse(char *dir)
 
 int main(int argc, char**argv)
 {
-    if(argc != 2)
+    if(argc != 3)
     {
         printf("Usage ./program %s\n", argv[1]);
         exit(-1);
     }
 
-    parse(argv[1]);
+    parse(argv[1],argv[2]);
     return 0;
 }
