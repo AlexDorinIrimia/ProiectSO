@@ -14,8 +14,8 @@ char* userID;
 char* dimensiune;
 char* links;
 char* modificare;
-int* inaltime;
-int* latime;
+char* inaltime;
+char* latime;
 char *newpath;
 char *path;
 char *name;
@@ -101,6 +101,7 @@ void bmpFileStat(char *file,char *dir)
         modificare = malloc(50 * sizeof(char));
         inaltime = malloc(sizeof(int));
         latime = malloc(sizeof(int));
+        int *aux = malloc(sizeof(int));
         name = basename(file);
         sprintf(path,"%s/%s_statistica.txt",dir,name);
         int descriptor = open(path, O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
@@ -123,18 +124,20 @@ void bmpFileStat(char *file,char *dir)
         {
             perror("Eroare");
         }
-        if((read(descriptor2,inaltime,4) == -1))
+        if((read(descriptor2,aux,4) == -1))
         {
             perror("Eroare");
         }
-        write(descriptor,inaltime,sizeof(int));
+        sprintf(inaltime,"%d",*aux);
+        write(descriptor,inaltime,strlen(inaltime));
         write(descriptor,"\n",1);
         write(descriptor, "Lungime: ", 9);
-        if((read(descriptor2,latime,4) == -1))
+        if((read(descriptor2,aux,4) == -1))
         {
             perror("Eroare");
         }
-        write(descriptor,latime,sizeof(int));
+        sprintf(latime,"%d",*aux);
+        write(descriptor,latime,strlen(latime));
         write(descriptor,"\n",1);
         write(descriptor, "Dimensiune: ", 12);
         sprintf(dimensiune,"%ld", s.st_size);
@@ -323,21 +326,29 @@ int parse(char *Dir,char *dir)
         {
             sprintf(newpath,"%s/%s", Dir,direct->d_name);
             stat(newpath,&st);
-            if(S_ISREG(st.st_mode))
+            int pid = fork();
+            if(pid == 0)
             {
-                if((bmpORother(newpath)))
-                    bmpFileStat(newpath,dir);
-                else
-                    fileStat(newpath,dir);
+                if(S_ISREG(st.st_mode))
+                {
+                    if((bmpORother(newpath)))
+                        bmpFileStat(newpath,dir);
+                    else
+                        fileStat(newpath,dir);
+                }
+                exit(0);
             }
-            else if(S_ISLNK(st.st_mode))
+            else 
             {
-                symbloicLinkStat(newpath,dir);
-            }
-            else if(S_ISDIR(st.st_mode))
-            {
-                dirStat(newpath,dir);
-                parse(newpath,dir);
+                if(S_ISLNK(st.st_mode))
+                {
+                    symbloicLinkStat(newpath,dir);
+                }
+                else if(S_ISDIR(st.st_mode))
+                {
+                    dirStat(newpath,dir);
+                    parse(newpath,dir);
+                }
             }
     
         }
