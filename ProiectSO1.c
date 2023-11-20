@@ -311,6 +311,7 @@ int parse(char *Dir,char *dir)
     DIR *director;
     struct dirent *direct;
     struct stat st;
+    int stare = 0;
     if((director = opendir(Dir)) == NULL)
     {
         perror("Eroare!");
@@ -336,19 +337,21 @@ int parse(char *Dir,char *dir)
                     else
                         fileStat(newpath,dir);
                 }
-                exit(0);
-            }
-            else 
-            {
                 if(S_ISLNK(st.st_mode))
                 {
                     symbloicLinkStat(newpath,dir);
                 }
-                else if(S_ISDIR(st.st_mode))
+                if(S_ISDIR(st.st_mode))
                 {
                     dirStat(newpath,dir);
                     parse(newpath,dir);
                 }
+                exit(0);
+            }
+            else 
+            {
+               wait(&stare);
+               printf("S-a incheiat procesul cu PID %d si codul %d!\n",getpid(),stare);
             }
     
         }
