@@ -19,6 +19,7 @@ char* latime;
 char *newpath;
 char *path;
 char *name;
+int nr_linii,coddescriere,codinfo;
 
 void permisiuniUser(struct stat stat, int descriptor)
 {
@@ -87,8 +88,9 @@ char *ultimaModificare(time_t s)
     return rezultat;
 }
 
-void bmpFileStat(char *file,char *dir)
+int bmpFileStat(char *file,char *dir)
 {
+    nr_linii = 0;
     path = malloc(100 * sizeof(char));
     name = malloc(100 * sizeof(char));
     struct stat s;
@@ -116,10 +118,16 @@ void bmpFileStat(char *file,char *dir)
             perror("Eroare");
             exit(-1);
         }
-        write(descriptor, "Nume fisier: ", 13);
-        write(descriptor,file,strlen(file) * sizeof(char));
+        coddescriere = write(descriptor, "Nume fisier: ", 13);
+        if(coddescriere != -1)
+        nr_linii++;
+        codinfo = write(descriptor,file,strlen(file) * sizeof(char));
+        if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
         write(descriptor,"\n",1);
-        write(descriptor, "Inaltime: ", 10);
+        coddescriere = write(descriptor, "Inaltime: ", 10);
+        if(coddescriere != -1)
+        nr_linii++;
         if((lseek(descriptor2,18,SEEK_SET) == -1))
         {
             perror("Eroare");
@@ -129,48 +137,77 @@ void bmpFileStat(char *file,char *dir)
             perror("Eroare");
         }
         sprintf(inaltime,"%d",*aux);
-        write(descriptor,inaltime,strlen(inaltime));
+        codinfo = write(descriptor,inaltime,strlen(inaltime));
+        if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
         write(descriptor,"\n",1);
-        write(descriptor, "Lungime: ", 9);
+        coddescriere = write(descriptor, "Lungime: ", 9);
+        if(coddescriere != -1)
+        nr_linii++;
         if((read(descriptor2,aux,4) == -1))
         {
             perror("Eroare");
         }
         sprintf(latime,"%d",*aux);
-        write(descriptor,latime,strlen(latime));
+        codinfo = write(descriptor,latime,strlen(latime));
+        if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;;
         write(descriptor,"\n",1);
-        write(descriptor, "Dimensiune: ", 12);
+        coddescriere = write(descriptor, "Dimensiune: ", 12);
+        if(coddescriere != -1)
+        nr_linii++;
         sprintf(dimensiune,"%ld", s.st_size);
-        write(descriptor, dimensiune, strlen(dimensiune) * sizeof(char));
+        codinfo = write(descriptor, dimensiune, strlen(dimensiune) * sizeof(char));
+        if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
         write(descriptor,"\n",1);
-        write(descriptor, "Identificatorul utilizatorului: ", 32);
+        coddescriere = write(descriptor, "Identificatorul utilizatorului: ", 32);
+        if(coddescriere != -1)
+        nr_linii++;
         sprintf(userID,"%d", s.st_uid);
-        write(descriptor, userID, strlen(userID) * sizeof(char));
+        codinfo = write(descriptor, userID, strlen(userID) * sizeof(char));
+        if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
         write(descriptor,"\n",1);
-        write(descriptor, "Timpul ultimei modificari: ", 27);
+        coddescriere = write(descriptor, "Timpul ultimei modificari: ", 27);
+        if(coddescriere != -1)
+        nr_linii++;
         time_t timp = s.st_mtime;
         modificare = ultimaModificare(timp);
-        write(descriptor, modificare, strlen(modificare) * sizeof(char));
+        codinfo = write(descriptor, modificare, strlen(modificare) * sizeof(char));
+        if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
         write(descriptor,"\n",1);
-        write(descriptor, "Numar de legaturi: ", 19);
+        coddescriere = write(descriptor, "Numar de legaturi: ", 19);
+        if(coddescriere != -1)
+        nr_linii++;
         sprintf(links,"%ld",s.st_nlink);
-        write(descriptor,links,strlen(links) * sizeof(char));
+        codinfo = write(descriptor,links,strlen(links) * sizeof(char));
+        if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
         write(descriptor,"\n",1);
-        write(descriptor, "Drepturi de acces user: ", 24);
+        coddescriere = write(descriptor, "Drepturi de acces user: ", 24);
+        if(coddescriere != -1)
+        nr_linii++;
         permisiuniUser(s,descriptor);
-        write(descriptor, "Drepturi de acces grup: ", 24);
+        coddescriere = write(descriptor, "Drepturi de acces grup: ", 24);
+        if(coddescriere != -1)
+        nr_linii++;
         permisiuniGrup(s,descriptor);
-        write(descriptor, "Drepturi de acces altii: ", 25);
+        coddescriere = write(descriptor, "Drepturi de acces altii: ", 25);
+        if(coddescriere != -1)
+        nr_linii++;
         permisiuniAltii(s,descriptor);
         write(descriptor,"\n",1);
         close(descriptor2);
         close(descriptor);
-
     }
+    return nr_linii;
 }
 
-void fileStat(char *file,char *dir)
+int fileStat(char *file,char *dir)
 {
+    nr_linii = 0;
     path = malloc(100 * sizeof(char));
     name = malloc(100 * sizeof(char));
     struct stat s;
@@ -189,41 +226,68 @@ void fileStat(char *file,char *dir)
             perror("Eroare");
             exit(-1);
         }
-        write(descriptor, "Nume fisier: ", 13);
+        coddescriere = write(descriptor, "Nume fisier: ", 13);
+        if(coddescriere != -1)
+        nr_linii++;
         write(descriptor,file,strlen(file) * sizeof(char));
+        if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
         write(descriptor,"\n",1);
-        write(descriptor, "Dimensiune: ", 12);
+        coddescriere = write(descriptor, "Dimensiune: ", 12);
+        if(coddescriere != -1)
+        nr_linii++;
         sprintf(dimensiune,"%ld", s.st_size);
         write(descriptor, dimensiune, strlen(dimensiune) * sizeof(char));
+        if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
         write(descriptor,"\n",1);
-        write(descriptor, "Identificatorul utilizatorului: ", 32);
+        coddescriere = write(descriptor, "Identificatorul utilizatorului: ", 32);
+        if(coddescriere != -1)
+        nr_linii++;
         sprintf(userID,"%d", s.st_uid);
         write(descriptor, userID, strlen(userID) * sizeof(char));
+        if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
         write(descriptor,"\n",1);
-        write(descriptor, "Timpul ultimei modificari: ", 27);
+        coddescriere = write(descriptor, "Timpul ultimei modificari: ", 27);
+        if(coddescriere != -1)
+        nr_linii++;
         time_t timp = s.st_mtime;
         modificare = ultimaModificare(timp);
         write(descriptor, modificare, strlen(modificare) * sizeof(char));
+        if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
         write(descriptor,"\n",1);
-        write(descriptor, "Numar de legaturi: ", 19);
+        coddescriere = write(descriptor, "Numar de legaturi: ", 19);
+        if(coddescriere != -1)
+        nr_linii++;
         sprintf(links,"%ld",s.st_nlink);
         write(descriptor,links,strlen(links) * sizeof(char));
+        if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
         write(descriptor,"\n",1);
-        write(descriptor, "Drepturi de acces user: ", 24);
+        coddescriere = write(descriptor, "Drepturi de acces user: ", 24);
+        if(coddescriere != -1)
+        nr_linii++;
         permisiuniUser(s, descriptor);
-        write(descriptor, "Drepturi de acces grup: ", 24);
+        coddescriere = write(descriptor, "Drepturi de acces grup: ", 24);
+        if(coddescriere != -1)
+        nr_linii++;
         permisiuniGrup(s, descriptor);
-        write(descriptor, "Drepturi de acces altii: ", 25);
+        coddescriere = write(descriptor, "Drepturi de acces altii: ", 25);
+        if(coddescriere != -1)
+        nr_linii++;
         permisiuniAltii(s, descriptor);
         write(descriptor,"\n",1);
         close(descriptor);
-
     }
+    return nr_linii;
 }
 
 
-void dirStat(char *dir,char *dir2)
+int dirStat(char *dir,char *dir2)
 {
+    nr_linii = 0;
     path = malloc(100 * sizeof(char));
     name = malloc(100 * sizeof(char));
     userID = malloc(sizeof(unsigned));
@@ -237,25 +301,41 @@ void dirStat(char *dir,char *dir2)
         perror("Eroare");
         exit(-1);
     }
-    write(descriptor,"Nume director: ", 14);
+    coddescriere = write(descriptor,"Nume director: ", 14);
+    if(coddescriere != -1)
+        nr_linii++;
     write(descriptor,dir,strlen(dir) * sizeof(char));
+    if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
     write(descriptor,"\n",1);
-    write(descriptor, "Identificatorul utilizatorului: ", 32);
+    coddescriere = write(descriptor, "Identificatorul utilizatorului: ", 32);
+    if(coddescriere != -1)
+        nr_linii++;
     sprintf(userID,"%d", dirstat.st_uid);
     write(descriptor, userID, strlen(userID) * sizeof(char));
+    if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
     write(descriptor,"\n",1);
-    write(descriptor, "Drepturi de acces user: ", 24);
+    coddescriere = write(descriptor, "Drepturi de acces user: ", 24);
+    if(coddescriere != -1)
+        nr_linii++;
     permisiuniUser(dirstat,descriptor);
-    write(descriptor, "Drepturi de acces grup: ", 24);
+    coddescriere = write(descriptor, "Drepturi de acces grup: ", 24);
+    if(coddescriere != -1)
+        nr_linii++;
     permisiuniGrup(dirstat,descriptor);
-    write(descriptor, "Drepturi de acces altii: ", 25);
+    coddescriere = write(descriptor, "Drepturi de acces altii: ", 25);
+    if(coddescriere != -1)
+        nr_linii++;
     permisiuniAltii(dirstat,descriptor);
     write(descriptor,"\n",1);
     close(descriptor);
+    return nr_linii;
 }
 
-void symbloicLinkStat(char *file,char *dir)
+int symbloicLinkStat(char *file,char *dir)
 {
+    nr_linii = 0;
     path = malloc(100 * sizeof(char));
     name = malloc(100 * sizeof(char));
     dimensiune = malloc(sizeof(unsigned));
@@ -271,25 +351,44 @@ void symbloicLinkStat(char *file,char *dir)
         perror("Eroare");
         exit(-1);
     }
-    write(descriptor,"Nume: ",6);
+    coddescriere = write(descriptor,"Nume: ",6);
+    if(coddescriere != -1)
+        nr_linii++;
     write(descriptor,file,strlen(file) * sizeof(char));
+    if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
     write(descriptor,"\n",1);
-    write(descriptor, "Dimensiune: ", 12);
+    coddescriere = write(descriptor, "Dimensiune: ", 12);
+    if(coddescriere != -1)
+        nr_linii++;
     sprintf(dimensiune,"%ld", s.st_size);
     write(descriptor, dimensiune, strlen(dimensiune) * sizeof(char));
+    if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
     write(descriptor,"\n",1);
-    write(descriptor,"Dimensiune target: ",19);
+    coddescriere = write(descriptor,"Dimensiune target: ",19);
+    if(coddescriere != -1)
+        nr_linii++;
     sprintf(dimensiune,"%ld", st.st_size);
     write(descriptor, dimensiune, strlen(dimensiune) * sizeof(char));
+    if(codinfo != -1 && coddescriere == -1)
+        nr_linii++;
     write(descriptor,"\n",1);
-    write(descriptor, "Drepturi de acces user: ", 24);
+    coddescriere = write(descriptor, "Drepturi de acces user: ", 24);
+    if(coddescriere != -1)
+        nr_linii++;
     permisiuniUser(s,descriptor);
-    write(descriptor, "Drepturi de acces grup: ", 24);
+    coddescriere = write(descriptor, "Drepturi de acces grup: ", 24);
+    if(coddescriere != -1)
+        nr_linii++;
     permisiuniGrup(s,descriptor);
-    write(descriptor, "Drepturi de acces altii: ", 25);
+    coddescriere = write(descriptor, "Drepturi de acces altii: ", 25);
+    if(coddescriere != -1)
+        nr_linii++;
     permisiuniAltii(s,descriptor);
     write(descriptor,"\n",1);
     close(descriptor);
+    return nr_linii;
 }
 
 int bmpORother(char *file)
@@ -301,8 +400,29 @@ int bmpORother(char *file)
         return 0;
 }
 
-int parse(char *Dir,char *dir)
+int childProcess(char *arg1,char*arg2,int(*func)(char *arg1,char* arg2))
 {
+    int stare;
+    int pid =  fork();
+    if(pid == 0)
+    {
+        exit(func(arg1,arg2));
+    }
+    else
+    {
+        wait(&stare);
+        printf("S-au scris %d linii!\n",WEXITSTATUS(stare));
+        return pid;
+    }
+}
+
+void grayscale(char *file)
+{
+
+}
+
+int parse(char *Dir,char *dir)
+{  
     if((newpath = malloc(150 * sizeof(char))) == NULL)
     {
         perror("Eroare!");
@@ -329,31 +449,37 @@ int parse(char *Dir,char *dir)
             stat(newpath,&st);
             int pid = fork();
             if(pid == 0)
-            {
+            {   
                 if(S_ISREG(st.st_mode))
                 {
                     if((bmpORother(newpath)))
-                        bmpFileStat(newpath,dir);
+                    {
+                        exit(childProcess(newpath,dir,bmpFileStat));
+                        greyascale(newpath);
+                    }
                     else
-                        fileStat(newpath,dir);
+                    {
+                        exit(childProcess(newpath,dir,fileStat));
+                    }
                 }
                 if(S_ISLNK(st.st_mode))
                 {
-                    symbloicLinkStat(newpath,dir);
-                }
+                    exit(childProcess(newpath,dir,symbloicLinkStat));
+                }    
                 if(S_ISDIR(st.st_mode))
                 {
-                    dirStat(newpath,dir);
+                    exit(childProcess(newpath,dir,dirStat));
                     parse(newpath,dir);
                 }
-                exit(0);
             }
-            else 
+            else
             {
                wait(&stare);
-               printf("S-a incheiat procesul cu PID %d si codul %d!\n",getpid(),stare);
+               if(WEXITSTATUS(stare) >= 0)
+               printf("S-a incheiat procesul cu PID %d si codul %d!\n",stare,EXIT_SUCCESS);
+               else
+               printf("S-a incheiat procesul cu PID %d si codul %d!\n",stare,EXIT_FAILURE);
             }
-    
         }
     }
     closedir(director);
@@ -364,7 +490,7 @@ int main(int argc, char**argv)
 {
     if(argc != 3)
     {
-        printf("Usage ./program %s\n", argv[1]);
+        printf("Usage ./program <%s> <%s>\n", argv[1], argv[2]);
         exit(-1);
     }
 
