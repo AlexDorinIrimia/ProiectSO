@@ -1,3 +1,5 @@
+# define _XOPEN_SOURCE
+# define _GNU_SOURCE
 # include <stdio.h>
 # include <sys/types.h>
 # include <sys/stat.h>
@@ -9,6 +11,9 @@
 # include <time.h>
 # include <dirent.h>
 # include <libgen.h>
+# include <sys/wait.h>
+
+#define PIX_OFF_BIT_OFF 10L
 
 char* userID;
 char* dimensiune;
@@ -404,6 +409,10 @@ int childProcess(char *arg1,char*arg2,int(*func)(char *arg1,char* arg2))
 {
     int stare;
     int pid =  fork();
+    if(pid == -1)
+    {
+        return -1;
+    }
     if(pid == 0)
     {
         exit(func(arg1,arg2));
@@ -418,7 +427,26 @@ int childProcess(char *arg1,char*arg2,int(*func)(char *arg1,char* arg2))
 
 void grayscale(char *file)
 {
+    int descriptor = open(file, O_RDWR);
+    unsigned long y = lseek(descriptor, 0, SEEK_END);
+    int fileLen = y;
+    unsigned int pixelDataOffset = 0;
+	lseek(descriptor, PIX_OFF_BIT_OFF, SEEK_SET);
+	read(descriptor, &pixelDataOffset, sizeof(unsigned int));
+    lseek(descriptor, pixelDataOffset, SEEK_SET);
+    unsigned int pix_len = fileLen - pixelDataOffset;
+    unsigned char* fileMem = malloc(pix_len);
+    read(descriptor, fileMem, pix_len);
+	for (int i = 0; i < pix_len; i += 3) {
+		int gray = 0.299 * fileMem[i] + 0.587 * fileMem[i + 1] + 0.114 * fileMem[i + 2];
+		fileMem[i]   = (unsigned char) gray;
+		fileMem[i+1] = (unsigned char) gray;
+		fileMem[i+2] = (unsigned char) gray;
+	}
+    lseek(descriptor, pixelDataOffset, SEEK_SET);
+	write(descriptor, fileMem, pix_len);
 
+	close(descriptor);
 }
 
 int parse(char *Dir,char *dir)
@@ -454,8 +482,8 @@ int parse(char *Dir,char *dir)
                 {
                     if((bmpORother(newpath)))
                     {
+                        grayscale(newpath);
                         exit(childProcess(newpath,dir,bmpFileStat));
-                        greyascale(newpath);
                     }
                     else
                     {
@@ -488,9 +516,9 @@ int parse(char *Dir,char *dir)
 
 int main(int argc, char**argv)
 {
-    if(argc != 3)
+    if(argc != 4)
     {
-        printf("Usage ./program <%s> <%s>\n", argv[1], argv[2]);
+        printf("Usage ./program <%s> <%s> <%s>\n", argv[1], argv[2],argv[3]);
         exit(-1);
     }
 
