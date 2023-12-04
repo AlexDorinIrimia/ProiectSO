@@ -111,10 +111,10 @@ int bmpFileStat(char *file,char *dir)
         int *aux = malloc(sizeof(int));
         name = basename(file);
         sprintf(path,"%s/%s_statistica.txt",dir,name);
-        int descriptor = open(path, O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        int descriptor = open(path, O_CREAT | O_RDWR | O_APPEND, S_IRUSR | S_IWUSR |S_IXUSR| S_IRGRP |S_IWGRP| S_IROTH);
         if(descriptor == -1)
         {
-            perror("Eroare");
+            perror("Eroare!");
             exit(-1);
         }
         int descriptor2 = open(file,O_RDONLY);
@@ -496,8 +496,8 @@ int parse(char *Dir,char *dir)
                 }    
                 if(S_ISDIR(st.st_mode))
                 {
-                    exit(childProcess(newpath,dir,dirStat));
                     parse(newpath,dir);
+                    exit(childProcess(newpath,dir,dirStat));
                 }
             }
             else
