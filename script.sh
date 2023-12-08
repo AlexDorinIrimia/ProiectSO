@@ -1,21 +1,18 @@
 #!/bin/bash
 
-if test "$#" -ne 2
+if test "$#" -ne 1
 then
 echo "Use .script.sh "
 exit 1
 fi
 
-if test -f "$2"
-then
 contor=0
-while read linie
+while read -r linie || test -n "$linie"
     do
-        rezultat=`echo $linie | grep -E '[A-Z].*\.$' | grep -v ',si'`
+        rezultat=`echo $linie | grep ^[A-Z] | grep $1 | grep [.]$ | grep -v ",si"`
         if test -n "$rezultat"
         then
-        contor=`expr $contor + 1`
+            contor=`expr $contor + 1`
         fi
-done < "$1"
-echo "Numar de propozitii corecte: $contor" > "$2"
-fi
+done
+echo $contor
