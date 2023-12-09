@@ -12,6 +12,7 @@
 # include <dirent.h>
 # include <libgen.h>
 # include <sys/wait.h>
+# include "Stat.h" 
 
 char* userID;
 char* dimensiune;
